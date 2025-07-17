@@ -53,8 +53,7 @@ class GetMainhandInfo {
   }
 };
 // Reduce Axe Durability Accounting for Unbreaking Enchantment
-// NOT WORKING ~~~~~~~
-function damageAxe(mainhandInfo) {
+function damageAxe(mainhandInfo, player) {
   if (!mainhandInfo.item || !axeIds.includes(mainhandInfo.itemTypeId)) return;
   // Get unbreaking enchantment level
   let unbreakingLevel = 0;
@@ -64,18 +63,21 @@ function damageAxe(mainhandInfo) {
   const enchantableComponent = cloneAxe.getComponent('minecraft:enchantable');
   const hasUnbreaking = enchantableComponent.hasEnchantment('minecraft:unbreaking');
   if (hasUnbreaking) unbreakingLevel = enchantableComponent.getEnchantment('minecraft:unbreaking').level;
+  // Calculate chance to consume durability
   let damageChance = 1 / (unbreakingLevel + 1);
   let damageRoll = Math.random();
-  // Calculate chance to consume durability
+  console.warn(`Unbreaking Level: ${unbreakingLevel}\nChance vs Rolled: ${damageChance}:${damageRoll}`);
+  // Saved by Unbreaking
   if (damageRoll > damageChance) return;
-  if (durabilityComponent.damage >= durabilityComponent.maxDamage) {
-    // If the axe is broken, remove it
-    mainhandInfo.slot.setItem();
-    //Might not work because doesn't have player initialized..?
-    player.playSound('random.break', { location: player.location });
-
+  // Damage the axe if it has the durability left
+  if (durabilityComponent.damage < durabilityComponent.maxDurability) {
+    console.warn(`DAMAGED\nDamage: ${durabilityComponent.damage}\nMax Durability: ${durabilityComponent.maxDurability}`);
+    durabilityComponent.damage++;
+    return;
   };
-  durabilityComponent.damage++;
+  // Axe is broken
+  player.playSound('random.break', { location: player.location });
+  mainhandInfo.slot.setItem();
 };
 // Unified Custom Component Behavior
 const copperBehaviorComponent = {
@@ -134,7 +136,7 @@ const copperBehaviorComponent = {
         };
         player.spawnParticle('minecraft:wax_particle', particleLocation, waxOffParticleColor);
       };
-      damageAxe(mainhandInfo);
+      damageAxe(mainhandInfo, player);
       return;
     };
     // De-Oxidization Logic
@@ -149,7 +151,7 @@ const copperBehaviorComponent = {
         };
         player.spawnParticle('minecraft:wax_particle', particleLocation, waxOffParticleColor);
       };
-      damageAxe(mainhandInfo);
+      damageAxe(mainhandInfo, player);
       return;
     }
     }
