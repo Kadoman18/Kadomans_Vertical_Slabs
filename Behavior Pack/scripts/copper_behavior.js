@@ -194,7 +194,7 @@ const copperBehaviorComponent = {
     const deoxidizeParticleColor = new MolangVariableMap();
     waxOnParticleColor.setColorRGB('variable.color', {red: 1.0, green: 0.5, blue: 0.0});
     waxOffParticleColor.setColorRGB('variable.color', {red: 1.0, green: 1.0, blue: 1.0});
-    deoxidizeParticleColor.setColorRGB('variable.color', {red: 0.4, green: 1.0, blue: 0.7});
+    deoxidizeParticleColor.setColorRGB('variable.color', {red: 0.0, green: 1.0, blue: 0.7});
     if (!mainhandInfo.item) return;
     const currentBlockId = block.typeId;
     const blockState = block.permutation.getAllStates();
@@ -223,8 +223,8 @@ const copperBehaviorComponent = {
     }
     // De-Oxidization Logic
     if (itemIsAxe && deoxidizeMap[currentBlockId]) {
-      block.setPermutation(BlockPermutation.resolve(deoxidizeMap[currentBlockId], blockState));
-    player.playSound('copper.wax.off', { location: player.location });
+    block.setPermutation(BlockPermutation.resolve(deoxidizeMap[currentBlockId], blockState));
+    player.playSound('scrape', { location: player.location });
     spawnParticles(player, block, 'minecraft:wax_particle', deoxidizeParticleColor);
     damageAxe(player);
     return;
