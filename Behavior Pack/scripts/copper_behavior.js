@@ -129,6 +129,7 @@ class GetMainhandInfo {
     const slot = inventory.container.getSlot(player.selectedSlotIndex);
     this.slot = slot;
     const item = slot.getItem();
+    if (!item) return;
     this.item = item;
     const itemTypeId = item.typeId;
     this.itemTypeId = itemTypeId;
@@ -151,22 +152,19 @@ function damageAxe(player) {
   if (!axeInfo.item || !axeIds.includes(axeInfo.itemTypeId)) return;
   // Get unbreaking enchantment level
   let unbreakingLevel = 0;
-  const axeItem = axeInfo.item;
-  const durabilityComponent = axeItem.getComponent('minecraft:durability');
-  const enchantableComponent = axeItem.getComponent('minecraft:enchantable');
+  const durabilityComponent = axeInfo.item.getComponent('minecraft:durability');
+  const enchantableComponent = axeInfo.item.getComponent('minecraft:enchantable');
   const hasUnbreaking = enchantableComponent.hasEnchantment('minecraft:unbreaking');
   if (hasUnbreaking) unbreakingLevel = enchantableComponent.getEnchantment('minecraft:unbreaking').level;
   // Calculate chance to consume durability
-  let damageChance = 1 / (unbreakingLevel + 1);
-  let damageRoll = Math.random();
-  console.warn(`Unbreaking Level: ${unbreakingLevel}\nChance vs Rolled: ${damageChance}:${damageRoll}`);
+  const damageChance = 1 / (unbreakingLevel + 1);
+  const damageRoll = Math.random();
   // Saved by Unbreaking
   if (damageRoll > damageChance) return;
   // Damage the axe if it has the durability left
   if (durabilityComponent.damage < durabilityComponent.maxDurability) {
-    console.warn(`DAMAGED\nDamage: ${durabilityComponent.damage}\nMax Durability: ${durabilityComponent.maxDurability}`);
     let newAxe = new ItemStack(axeInfo.itemTypeId);
-    newAxe = axeItem
+    newAxe = axeInfo.item
     let newDurabilityComponent = newAxe.getComponent('minecraft:durability');
     newDurabilityComponent.damage++;
     axeInfo.slot.setItem(newAxe);
@@ -193,8 +191,10 @@ const copperBehaviorComponent = {
     const mainhandInfo = new GetMainhandInfo(player);
     const waxOnParticleColor = new MolangVariableMap();
     const waxOffParticleColor = new MolangVariableMap();
-    waxOnParticleColor.setColorRGB('variable.color', {red: 255, green: 180, blue: 0});
-    waxOffParticleColor.setColorRGB('variable.color', {red: 150, green: 150, blue: 150});
+    const deoxidizeParticleColor = new MolangVariableMap();
+    waxOnParticleColor.setColorRGB('variable.color', {red: 1.0, green: 0.5, blue: 0.0});
+    waxOffParticleColor.setColorRGB('variable.color', {red: 1.0, green: 1.0, blue: 1.0});
+    deoxidizeParticleColor.setColorRGB('variable.color', {red: 0.4, green: 1.0, blue: 0.7});
     if (!mainhandInfo.item) return;
     const currentBlockId = block.typeId;
     const blockState = block.permutation.getAllStates();
@@ -225,7 +225,7 @@ const copperBehaviorComponent = {
     if (itemIsAxe && deoxidizeMap[currentBlockId]) {
       block.setPermutation(BlockPermutation.resolve(deoxidizeMap[currentBlockId], blockState));
     player.playSound('copper.wax.off', { location: player.location });
-    spawnParticles(player, block, 'minecraft:wax_particle', waxOffParticleColor);
+    spawnParticles(player, block, 'minecraft:wax_particle', deoxidizeParticleColor);
     damageAxe(player);
     return;
   }
