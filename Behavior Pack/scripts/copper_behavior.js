@@ -128,7 +128,7 @@ class GetMainhandInfo {
     const inventory = player.getComponent('inventory');
     const slot = inventory.container.getSlot(player.selectedSlotIndex);
     this.slot = slot;
-    let item = slot.getItem();
+    const item = slot.getItem();
     this.item = item;
     const itemTypeId = item.typeId;
     this.itemTypeId = itemTypeId;
@@ -146,12 +146,13 @@ function spawnParticles(player, block, particle, color) {
   }
 }
 // Reduce Axe Durability Accounting for Unbreaking Enchantment
-function damageAxe(mainhandInfo, player) {
-  if (!mainhandInfo.item || !axeIds.includes(mainhandInfo.itemTypeId)) return;
+function damageAxe(player) {
+  const axeInfo = new GetMainhandInfo(player);
+  if (!axeInfo.item || !axeIds.includes(axeInfo.itemTypeId)) return;
   // Get unbreaking enchantment level
   let unbreakingLevel = 0;
-  let axeItem = mainhandInfo.item;
-  let durabilityComponent = axeItem.getComponent('minecraft:durability');
+  const axeItem = axeInfo.item;
+  const durabilityComponent = axeItem.getComponent('minecraft:durability');
   const enchantableComponent = axeItem.getComponent('minecraft:enchantable');
   const hasUnbreaking = enchantableComponent.hasEnchantment('minecraft:unbreaking');
   if (hasUnbreaking) unbreakingLevel = enchantableComponent.getEnchantment('minecraft:unbreaking').level;
@@ -164,12 +165,16 @@ function damageAxe(mainhandInfo, player) {
   // Damage the axe if it has the durability left
   if (durabilityComponent.damage < durabilityComponent.maxDurability) {
     console.warn(`DAMAGED\nDamage: ${durabilityComponent.damage}\nMax Durability: ${durabilityComponent.maxDurability}`);
-    durabilityComponent.damage++;
+    let newAxe = new ItemStack(axeInfo.itemTypeId);
+    newAxe = axeItem
+    let newDurabilityComponent = newAxe.getComponent('minecraft:durability');
+    newDurabilityComponent.damage++;
+    axeInfo.slot.setItem(newAxe);
     return;
   }
   // Axe is broken
   player.playSound('random.break', { location: player.location });
-  mainhandInfo.slot.setItem();
+  axeInfo.slot.setItem();
 }
 // Unified Custom Component Behavior
 const copperBehaviorComponent = {
@@ -193,8 +198,9 @@ const copperBehaviorComponent = {
     if (!mainhandInfo.item) return;
     const currentBlockId = block.typeId;
     const blockState = block.permutation.getAllStates();
-    const itemIsAxe = axeIds.includes(mainhandInfo.itemTypeId);
     const itemIsHoneycomb = mainhandInfo.itemTypeId === 'minecraft:honeycomb';
+    const itemIsAxe = axeIds.includes(mainhandInfo.itemTypeId);
+    if (!itemIsHoneycomb && !itemIsAxe) return;
     // Waxing Logic
     if (itemIsHoneycomb && waxMap[currentBlockId]) {
       block.setPermutation(BlockPermutation.resolve(waxMap[currentBlockId], blockState));
@@ -212,19 +218,19 @@ const copperBehaviorComponent = {
       block.setPermutation(BlockPermutation.resolve(unwaxMap[currentBlockId], blockState));
       player.playSound('copper.wax.off', { location: player.location });
       spawnParticles(player, block, 'minecraft:wax_particle', waxOffParticleColor);
-      damageAxe(mainhandInfo, player);
+      damageAxe(player);
       return;
     }
     // De-Oxidization Logic
     if (itemIsAxe && deoxidizeMap[currentBlockId]) {
       block.setPermutation(BlockPermutation.resolve(deoxidizeMap[currentBlockId], blockState));
-      player.playSound('copper.wax.off', { location: player.location });
-      spawnParticles(player, block, 'minecraft:wax_particle', waxOffParticleColor);
-      damageAxe(mainhandInfo, player);
-      return;
-    }
-    }
+    player.playSound('copper.wax.off', { location: player.location });
+    spawnParticles(player, block, 'minecraft:wax_particle', waxOffParticleColor);
+    damageAxe(player);
+    return;
   }
+    }
+}
 // Component Registration
 system.beforeEvents.startup.subscribe(({ blockComponentRegistry }) => {
   blockComponentRegistry.registerCustomComponent('kado:copper_behavior', copperBehaviorComponent);
