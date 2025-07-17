@@ -46,21 +46,31 @@ class GetMainhandInfo {
     const inventory = player.getComponent('inventory');
     const slot = inventory.container.getSlot(player.selectedSlotIndex);
     this.slot = slot;
-    const item = slot.getItem();
+    let item = slot.getItem();
     this.item = item;
     const itemTypeId = item.typeId;
     this.itemTypeId = itemTypeId;
   }
 };
+function spawnParticles(player, block, particle, color) {
+  const blockLocation = block.location;
+  for (let particleCount = 0; particleCount < 15; particleCount++) {
+    let particleLocation = {
+      x: blockLocation.x + Math.random(),
+      y: blockLocation.y + Math.random(),
+      z: blockLocation.z + Math.random(),
+    };
+    player.spawnParticle(particle, particleLocation, color);
+  };
+}
 // Reduce Axe Durability Accounting for Unbreaking Enchantment
 function damageAxe(mainhandInfo, player) {
   if (!mainhandInfo.item || !axeIds.includes(mainhandInfo.itemTypeId)) return;
   // Get unbreaking enchantment level
   let unbreakingLevel = 0;
-  let cloneAxe = mainhandInfo.item.clone();
-  mainhandInfo.slot.setItem(cloneAxe);
-  let durabilityComponent = cloneAxe.getComponent('minecraft:durability');
-  const enchantableComponent = cloneAxe.getComponent('minecraft:enchantable');
+  let axeItem = mainhandInfo.item;
+  let durabilityComponent = axeItem.getComponent('minecraft:durability');
+  const enchantableComponent = axeItem.getComponent('minecraft:enchantable');
   const hasUnbreaking = enchantableComponent.hasEnchantment('minecraft:unbreaking');
   if (hasUnbreaking) unbreakingLevel = enchantableComponent.getEnchantment('minecraft:unbreaking').level;
   // Calculate chance to consume durability
@@ -94,7 +104,6 @@ const copperBehaviorComponent = {
   // Interaction Logic
   onPlayerInteract({ block, player }) {
     const mainhandInfo = new GetMainhandInfo(player);
-    const blockLocation = block.location;
     const waxOnParticleColor = new MolangVariableMap();
     const waxOffParticleColor = new MolangVariableMap();
     waxOnParticleColor.setColorRGB('variable.color', {red: 255, green: 180, blue: 0});
@@ -107,35 +116,20 @@ const copperBehaviorComponent = {
     // Waxing Logic
     if (itemIsHoneycomb && waxMap[currentBlockId]) {
       block.setPermutation(BlockPermutation.resolve(waxMap[currentBlockId], blockState));
-      if (mainhandInfo.item.amount > 1) {
-      const newHoneycombAmount = new ItemStack(mainhandInfo.itemTypeId, mainhandInfo.item.amount - 1)
-      mainhandInfo.slot.setItem(newHoneycombAmount)
-      } else {
+      if (mainhandInfo.item.amount == 1) {
         mainhandInfo.slot.setItem();
       };
+      const newHoneycombAmount = new ItemStack(mainhandInfo.itemTypeId, mainhandInfo.item.amount - 1)
+      mainhandInfo.slot.setItem(newHoneycombAmount)
       player.playSound("copper.wax.on", { location: player.location });
-      for (let i = 0; i < 15; i++) {
-        let particleLocation = {
-          x: blockLocation.x + Math.random(),
-          y: blockLocation.y + Math.random(),
-          z: blockLocation.z + Math.random(),
-        };
-        player.spawnParticle('minecraft:wax_particle', particleLocation, waxOnParticleColor);
-      };
+      spawnParticles(player, block, 'minecraft:wax_particle', waxOnParticleColor);
       return;
     };
     // Un-Waxing Logic
     if (itemIsAxe && unwaxMap[currentBlockId]) {
       block.setPermutation(BlockPermutation.resolve(unwaxMap[currentBlockId], blockState));
       player.playSound('copper.wax.off', { location: player.location });
-      for (let i = 0; i < 15; i++) {
-        let particleLocation = {
-          x: blockLocation.x + Math.random(),
-          y: blockLocation.y + Math.random(),
-          z: blockLocation.z + Math.random(),
-        };
-        player.spawnParticle('minecraft:wax_particle', particleLocation, waxOffParticleColor);
-      };
+      spawnParticles(player, block, 'minecraft:wax_particle', waxOffParticleColor);
       damageAxe(mainhandInfo, player);
       return;
     };
@@ -143,14 +137,7 @@ const copperBehaviorComponent = {
     if (itemIsAxe && deoxidizeMap[currentBlockId]) {
       block.setPermutation(BlockPermutation.resolve(deoxidizeMap[currentBlockId], blockState));
       player.playSound('copper.wax.off', { location: player.location });
-      for (let i = 0; i < 15; i++) {
-        let particleLocation = {
-          x: blockLocation.x + Math.random(),
-          y: blockLocation.y + Math.random(),
-          z: blockLocation.z + Math.random(),
-        };
-        player.spawnParticle('minecraft:wax_particle', particleLocation, waxOffParticleColor);
-      };
+      spawnParticles(player, block, 'minecraft:wax_particle', waxOffParticleColor);
       damageAxe(mainhandInfo, player);
       return;
     }
