@@ -1,4 +1,5 @@
 import {
+  world,
   system,
   BlockPermutation,
   ItemStack,
@@ -30,8 +31,8 @@ const unwaxMap = {
   "kado:waxed_weathered_cut_copper_vertical_slab": "kado:weathered_cut_copper_vertical_slab",
   "kado:waxed_oxidized_cut_copper_vertical_slab": "kado:oxidized_cut_copper_vertical_slab",
 }
-// Vanilla Copper Blocks List
-const vanillaCopperBlocks = [
+// All Copper Blocks List
+const allCopperBlocks = [
     "minecraft:copper_block",
     "minecraft:exposed_copper",
     "minecraft:weathered_copper",
@@ -103,7 +104,7 @@ const vanillaCopperBlocks = [
     "minecraft:waxed_copper_bulb",
     "minecraft:waxed_exposed_copper_bulb",
     "minecraft:waxed_weathered_copper_bulb",
-    "minecraft:waxed_oxidized_copper_bulb"//FGD,
+    "minecraft:waxed_oxidized_copper_bulb",
     //FGD"minecraft:copper_chest",
     //FGD"minecraft:exposed_copper_chest",
     //FGD"minecraft:weathered_copper_chest",
@@ -111,7 +112,15 @@ const vanillaCopperBlocks = [
     //FGD"minecraft:waxed_copper_chest",
     //FGD"minecraft:waxed_exposed_copper_chest",
     //FGD"minecraft:waxed_weathered_copper_chest",
-    //FGD"minecraft:waxed_oxidized_copper_chest"
+    //FGD"minecraft:waxed_oxidized_copper_chest",
+    "kado:cut_copper_vertical_slab",
+    "kado:exposed_cut_copper_vertical_slab",
+    "kado:weathered_cut_copper_vertical_slab",
+    "kado:oxidized_cut_copper_vertical_slab",
+    "kado:waxed_cut_copper_vertical_slab",
+    "kado:waxed_exposed_cut_copper_vertical_slab",
+    "kado:waxed_weathered_cut_copper_vertical_slab",
+    "kado:waxed_oxidized_cut_copper_vertical_slab"
 ];
 // All Vanilla Axe Type IDs
 const axeIds = [
@@ -174,6 +183,24 @@ function damageAxe(player) {
   player.playSound('random.break', { location: player.location });
   axeInfo.slot.setItem();
 }
+// Determine oxidation level
+function getOxidationLevel(blockTypeId) {
+  if (blockTypeId.includes("oxidized")) return 4;
+  if (blockTypeId.includes("weathered")) return 3;
+  if (blockTypeId.includes("exposed")) return 2;
+  if (blockTypeId.includes("copper") && !blockTypeId.includes("waxed")) return 1;
+  return 0; // Not a copper block or is waxed
+}
+function checkTaxicabBlocks() {
+  for (let xDirection = -4; xDirection <= 4; xDirection++) {
+    for (let yDirection = -4; yDirection <= 4; yDirection++) {
+      for (let zDirection = -4; zDirection <= 4; zDirection++) {
+        const count = (Math.abs(xDirection) + Math.abs(yDirection) + Math.abs(zDirection));
+        return count;
+      }
+    }
+  }
+}
 // Unified Custom Component Behavior
 const copperBehaviorComponent = {
   // Oxidization Logic (Triggered by minecraft:tick)
@@ -181,10 +208,57 @@ const copperBehaviorComponent = {
   onTick({ block }) {
     const currentBlockId = block.typeId;
     const nextBlockId = oxidizeMap[currentBlockId];
-    if (!nextBlockId) return;
-    const blockState = block.permutation.getAllStates();
-    const newBlockPermutations = BlockPermutation.resolve(nextBlockId, blockState);
-    block.setPermutation(newBlockPermutations);
+    // Only proceed if this block can oxidize and is not waxed
+    if (!nextBlockId || currentBlockId.includes("waxed")) return;
+    // Pre-oxidation check (64/1125 chance)
+    if (Math.random() > (64 / 1125)) return; //
+    const blockLocation = block.location;
+    const currentOxidizationLevel = getOxidationLevel(currentBlockId);
+    let copperNearbyCount = 0;
+    let moreOxidizedCopperNearbyCount = 0;
+    let hasLowerOxidationNeighbor = false;
+    // Check blocks nearby (taxicab distance)
+    for (let xDirection = -4; xDirection <= 4; xDirection++) {
+      for (let yDirection = -4; yDirection <= 4; yDirection++) {
+        for (let zDirection = -4; zDirection <= 4; zDirection++) {
+          if (Math.abs(xDirection) + Math.abs(yDirection) + Math.abs(zDirection) > 4) continue; // Taxicab distance
+          const neighborLocation = { x: blockLocation.x + xDirection, y: blockLocation.y + yDirection, z: blockLocation.z + zDirection };
+          const neighborBlock = world.getDimension(block.dimension.id).getBlock(neighborLocation);
+          if (neighborBlock && allCopperBlocks.includes(neighborBlock.typeId) && !neighborBlock.typeId.includes("waxed")) {
+            copperNearbyCount++;
+            const neighborOxidationLevel = getOxidationLevel(neighborBlock.typeId);
+
+            if (neighborOxidationLevel < currentOxidizationLevel) {
+              hasLowerOxidationNeighbor = true;
+              console.warn(`Oxidization Levels:\nNeighbor: ${neighborOxidationLevel}\nCurrent:${currentOxidizationLevel}`)
+              break; // Found a lower oxidation level, pre-oxidation ends
+            }
+            if (neighborOxidationLevel > currentOxidizationLevel) {
+              console.warn(`Oxidization Levels:\nNeighbor: ${neighborOxidationLevel}\nCurrent:${currentOxidizationLevel}`)
+              moreOxidizedCopperNearbyCount++; // Count higher oxidation level neighbors
+            }
+          }
+        }
+        if (hasLowerOxidationNeighbor) break;
+      }
+      if (hasLowerOxidationNeighbor) break;
+    }
+    if (hasLowerOxidationNeighbor) return; // Do not oxidize if a lower oxidation level neighbor is found
+    // Calculate ratio of nearby copper
+    const copperNearbyRatio = (moreOxidizedCopperNearbyCount + 1) / (copperNearbyCount + 1);
+    let modifierValue = 1;
+    if (currentOxidizationLevel === 1) { // No oxidation
+      modifierValue = 0.75;
+    }
+    // Calculate final oxidation probability
+    const finalOxidationProbability = modifierValue * (copperNearbyRatio * copperNearbyRatio);
+    // Apply oxidation based on probability
+    if (Math.random() < finalOxidationProbability) {
+      console.warn(`I HAVE OXIDIZED - [${blockLocation.x}, ${blockLocation.y}, ${blockLocation.z}]`)
+      const blockState = block.permutation.getAllStates();
+      const newBlockPermutations = BlockPermutation.resolve(nextBlockId, blockState);
+      block.setPermutation(newBlockPermutations);
+    }
   },
   // Interaction Logic
   onPlayerInteract({ block, player }) {

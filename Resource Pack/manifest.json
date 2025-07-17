@@ -4,7 +4,7 @@
 		"name": "Kadoman's Vertical Slabs (RP)",
 		"description": "Kadomans Vertical Slabs pack, complete with 'back to blocks' functionality",
 		"uuid": "c8201159-7e72-454f-bc16-aba10d67b869",
-		"version": [3, 0, 4],
+		"version": [3, 0, 5],
 		"min_engine_version": [1, 21, 0]
 	},
 	"modules": [
@@ -12,13 +12,13 @@
 			"type": "resources",
 			"description": "Fixed texture issue with waxed item visuals.",
 			"uuid": "4771ec00-8156-4ce6-9315-dce5a01caf33",
-			"version": [3, 0, 4]
+			"version": [3, 0, 5]
 		}
 	],
 	"dependencies": [
 		{
 			"uuid": "8687201a-06f6-41f0-a1a1-805d0072002e",
-			"version": [3, 1, 0]
+			"version": [3, 1, 1]
 		}
 	],
 	"metadata": { "authors": ["kadoman"] }
