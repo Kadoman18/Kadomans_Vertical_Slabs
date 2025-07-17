@@ -120,7 +120,7 @@ const allCopperBlocks = [
 	"kado:waxed_cut_copper_vertical_slab",
 	"kado:waxed_exposed_cut_copper_vertical_slab",
 	"kado:waxed_weathered_cut_copper_vertical_slab",
-		"kado:waxed_oxidized_cut_copper_vertical_slab"
+	"kado:waxed_oxidized_cut_copper_vertical_slab"
 ];
 // All Vanilla Axe Type IDs
 const axeIds = [
