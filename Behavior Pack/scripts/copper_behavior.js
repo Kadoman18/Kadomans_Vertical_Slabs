@@ -105,14 +105,16 @@ const allCopperBlocks = [
 	"minecraft:waxed_exposed_copper_bulb",
 	"minecraft:waxed_weathered_copper_bulb",
 	"minecraft:waxed_oxidized_copper_bulb",
-	//FGD"minecraft:copper_chest",
-	//FGD"minecraft:exposed_copper_chest",
-	//FGD"minecraft:weathered_copper_chest",
-	//FGD"minecraft:oxidized_copper_chest",
-	//FGD"minecraft:waxed_copper_chest",
-	//FGD"minecraft:waxed_exposed_copper_chest",
-	//FGD"minecraft:waxed_weathered_copper_chest",
-	//FGD"minecraft:waxed_oxidized_copper_chest",
+	/* -- FALL GAME DROP -----
+	"minecraft:copper_chest",
+	"minecraft:exposed_copper_chest",
+	"minecraft:weathered_copper_chest",
+	"minecraft:oxidized_copper_chest",
+	"minecraft:waxed_copper_chest",
+	"minecraft:waxed_exposed_copper_chest",
+	"minecraft:waxed_weathered_copper_chest",
+	"minecraft:waxed_oxidized_copper_chest",
+	----- FALL GAME DROP -- */
 	"kado:cut_copper_vertical_slab",
 	"kado:exposed_cut_copper_vertical_slab",
 	"kado:weathered_cut_copper_vertical_slab",
@@ -126,7 +128,9 @@ const allCopperBlocks = [
 const axeIds = [
 	"minecraft:wooden_axe",
 	"minecraft:stone_axe",
-	//FGD"minecraft:copper_axe",
+	/* -- FALL GAME DROP -----
+	"minecraft:copper_axe",
+	----- FALL GAME DROP -- */
 	"minecraft:iron_axe",
 	"minecraft:diamond_axe",
 	"minecraft:netherite_axe",
