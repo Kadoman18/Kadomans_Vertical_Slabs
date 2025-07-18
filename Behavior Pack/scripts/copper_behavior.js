@@ -132,6 +132,7 @@ const axeIds = [
 	"minecraft:netherite_axe",
 	"minecraft:golden_axe",
 ];
+// Gets the necessary inventory components
 class GetMainhandInfo {
 	constructor(player) {
 		const inventory = player.getComponent('inventory');
@@ -144,6 +145,7 @@ class GetMainhandInfo {
 		this.itemTypeId = itemTypeId;
 	}
 }
+// Used to spawn the interaction particles
 function spawnParticles(player, block, particle, color) {
   	const blockLocation = block.location;
  	for (let particleCount = 0; particleCount < 15; particleCount++) {
@@ -194,24 +196,23 @@ function getOxidationLevel(blockTypeId) {
 // Unified Custom Component Behavior
 const copperBehaviorComponent = {
   // Oxidization Logic (Triggered by minecraft:tick)
-  // Needs vanilla 'other copper nearby' proximity testing.
 onTick({ block }) {
     	const currentBlockId = block.typeId;
     	const nextBlockId = oxidizeMap[currentBlockId];
     	// Only proceed if this block can oxidize and is not waxed
     	if (!nextBlockId || currentBlockId.includes("waxed")) return;
-    	// Pre-oxidation check (64/1125 chance)
-    	if (Math.random() > (64 / 1125)) return; //
+    	// Pre-oxidation check
+    	if (Math.random() > (64 / 1125)) return;
     	const blockLocation = block.location;
     	const currentOxidizationLevel = getOxidationLevel(currentBlockId);
     	let copperNearbyCount = 0;
     	let moreOxidizedCopperNearbyCount = 0;
     	let hasLowerOxidationNeighbor = false;
-    	// Check blocks nearby (taxicab distance)
+    	// Check nearby blocks (taxicab distance)
     	for (let xDirection = -4; xDirection <= 4; xDirection++) {
       		for (let yDirection = -4; yDirection <= 4; yDirection++) {
         		for (let zDirection = -4; zDirection <= 4; zDirection++) {
-        		if (Math.abs(xDirection) + Math.abs(yDirection) + Math.abs(zDirection) > 4) continue; // Taxicab distance
+        		if (Math.abs(xDirection) + Math.abs(yDirection) + Math.abs(zDirection) > 4) continue; // Taxicab distance calculation
           		const neighborLocation = { x: blockLocation.x + xDirection, y: blockLocation.y + yDirection, z: blockLocation.z + zDirection };
           		const neighborBlock = world.getDimension(block.dimension.id).getBlock(neighborLocation);
           		if (neighborBlock && allCopperBlocks.includes(neighborBlock.typeId) && !neighborBlock.typeId.includes("waxed")) {
@@ -219,10 +220,10 @@ onTick({ block }) {
             			const neighborOxidationLevel = getOxidationLevel(neighborBlock.typeId);
             			if (neighborOxidationLevel < currentOxidizationLevel) {
               				hasLowerOxidationNeighbor = true;
-              				console.warn(`Oxidization Levels:\nNeighbor: ${neighborOxidationLevel}\nCurrent:${currentOxidizationLevel}`)
               				break; // Found a lower oxidation level, pre-oxidation ends
             				}
             				if (neighborOxidationLevel > currentOxidizationLevel) {
+						// Debug: Oxidization Levels - Remove when finished
  	             				console.warn(`Oxidization Levels:\nNeighbor: ${neighborOxidationLevel}\nCurrent:${currentOxidizationLevel}`)
  	             				moreOxidizedCopperNearbyCount++; // Count higher oxidation level neighbors
  	           			}
@@ -233,17 +234,21 @@ onTick({ block }) {
       		if (hasLowerOxidationNeighbor) break;
     	}
     	if (hasLowerOxidationNeighbor) return; // Do not oxidize if a lower oxidation neighbor is found
-    	// Calculate ratio of nearby copper
-    	const copperNearbyRatio = (moreOxidizedCopperNearbyCount + 1) / (copperNearbyCount + 1);
+    		// Calculate ratio of nearby copper
+		let copperNearbyRatio = 0;
+		if (copperNearbyCount === 0) {
+			copperNearbyRatio = 0;
+		} else {
+			copperNearbyRatio = (moreOxidizedCopperNearbyCount + 1) / (copperNearbyCount + 1);
+		}
     	let modifierValue = 1;
-    	if (currentOxidizationLevel === 1) { // No oxidation
-      		modifierValue = 0.75;
-    		}
+		if (currentOxidizationLevel === 1) { // Bare copper
+			modifierValue = 0.75;
+			}
     		// Calculate final oxidation probability
     		const finalOxidationProbability = modifierValue * (copperNearbyRatio * copperNearbyRatio);
     		// Apply oxidation based on probability
     		if (Math.random() < finalOxidationProbability) {
-			console.warn(`I HAVE OXIDIZED to level ${currentOxidizationLevel + 1} - [${blockLocation.x}, ${blockLocation.y}, ${blockLocation.z}]`)
 			const blockState = block.permutation.getAllStates();
 			const newBlockPermutations = BlockPermutation.resolve(nextBlockId, blockState);
 			block.setPermutation(newBlockPermutations);
